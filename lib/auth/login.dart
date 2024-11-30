@@ -1,8 +1,8 @@
-import 'package:app_packtrack/list_store_screen.dart';
+import 'package:app_packtrack/store/list_store_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:app_packtrack/signup.dart';
-import 'package:app_packtrack/recovery.dart';
+import 'package:app_packtrack/auth/signup.dart';
+import 'package:app_packtrack/auth/recovery.dart';
 import 'package:app_packtrack/homepage.dart';
 
 class LoginScreen extends StatefulWidget {
