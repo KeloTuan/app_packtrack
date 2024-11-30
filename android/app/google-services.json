@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "739492298588",
+    "project_id": "app-packtrack-c8d8e",
+    "storage_bucket": "app-packtrack-c8d8e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:739492298588:android:3312dc9924cabe18074b99",
+        "android_client_info": {
+          "package_name": "com.example.app_packtrack"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjhSWkbSiN10YEuB_mDurFRKgJMnj1F5M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
