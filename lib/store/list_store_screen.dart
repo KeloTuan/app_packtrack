@@ -1,133 +1,107 @@
-import 'package:app_packtrack/process_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:app_packtrack/store/add_store_screen.dart';
+import 'package:app_packtrack/store/firebase_auth_provider.dart';
+import 'package:app_packtrack/store/store_selected_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:app_packtrack/store/add_store_screen.dart'; // Import màn hình AddStoreScreen
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:app_packtrack/store/store_provider.dart';
+import 'package:app_packtrack/process_screen.dart'; // Import ProcessScreen
 
-class StoreListScreen extends StatefulWidget {
+class StoreListScreen extends ConsumerWidget {
   @override
-  _StoreListScreenState createState() => _StoreListScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Theo dõi trạng thái người dùng
+    final userAsyncValue = ref.watch(userProvider);
 
-class _StoreListScreenState extends State<StoreListScreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final DatabaseReference _databaseRef =
-      FirebaseDatabase.instance.ref().child('users');
-
-  List<Map> stores = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchStores();
-  }
-
-  void _fetchStores() async {
-    String uid = _auth.currentUser!.uid; // Lấy UID của người dùng hiện tại
-
-    DataSnapshot snapshot = await _databaseRef.child(uid).child('stores').get();
-
-    if (snapshot.exists) {
-      Map<dynamic, dynamic> storeData = snapshot.value as Map<dynamic, dynamic>;
-      setState(() {
-        stores = storeData.entries.map((entry) {
-          return {
-            'storeName': entry.value['storeName'],
-            'storePhone': entry.value['storePhone'],
-            'storeAddress': entry.value['storeAddress'],
-          };
-        }).toList();
-      });
+    // Hiển thị khi trạng thái người dùng đang tải
+    if (userAsyncValue.isLoading) {
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
+    // Lấy dữ liệu người dùng
+    final user = userAsyncValue.value;
+    if (user == null) {
+      return Scaffold(
+        body: Center(child: Text('Vui lòng đăng nhập.')),
+      );
+    }
+
+    // Lấy danh sách cửa hàng của người dùng hiện tại
+    final stores = ref.watch(storeProvider(user.uid));
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cửa Hàng', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Cửa Hàng'),
         actions: [
           IconButton(
-            icon: Icon(Icons.add),
+            icon: const Icon(Icons.add),
             onPressed: () {
-              // Chuyển đến màn hình thêm cửa hàng và chờ màn hình quay lại
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) =>
-                        AddStoreScreen(onStoreAdded: _fetchStores)),
+                  builder: (context) => AddStoreScreen(uid: user.uid),
+                ),
               );
             },
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(60),
+          preferredSize: const Size.fromHeight(50.0),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Tìm kiếm cửa hàng...",
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+            padding: const EdgeInsets.all(8.0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Chào, ${user.email}',
+                style: TextStyle(color: Colors.white, fontSize: 16),
               ),
             ),
           ),
         ),
       ),
-      body: ListView.builder(
-        itemCount: stores.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Card(
-              elevation: 5,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListTile(
-                contentPadding: EdgeInsets.all(16),
-                leading: Icon(
-                  Icons.store,
-                  size: 40,
-                  color: Colors.blueAccent,
-                ),
-                title: Text(
-                  stores[index]['storeName'],
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black87,
+      body: stores.isEmpty
+          ? Center(child: Text('Không có cửa hàng nào.'))
+          : ListView.builder(
+              itemCount: stores.length,
+              itemBuilder: (context, index) {
+                final store = stores[index];
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Card(
+                    elevation: 4, // Độ sâu của bóng
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12), // Bo góc
+                    ),
+                    child: ListTile(
+                      contentPadding:
+                          const EdgeInsets.all(16.0), // Khoảng cách trong Card
+                      title: Text(store.storeName,
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Địa chỉ: ${store.storeAddress}'),
+                          Text('SĐT: ${store.storePhone}'),
+                        ],
+                      ),
+                      onTap: () {
+                        // Lưu thông tin cửa hàng vào storeSelectedProvider
+                        ref.read(storeSelectedProvider.notifier).state = store;
+
+                        // Điều hướng đến ProcessScreen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProcessScreen(),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Địa chỉ: ${stores[index]['storeAddress']}',
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                    Text(
-                      'SĐT: ${stores[index]['storePhone']}',
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                  ],
-                ),
-                trailing: IconButton(
-                  icon: Icon(Icons.more_vert),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ProcessScreen()),
-                    );
-                  },
-                ),
-              ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 }

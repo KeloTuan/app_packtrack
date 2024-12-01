@@ -1,98 +1,76 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:app_packtrack/store/store_provider.dart';
 
-class AddStoreScreen extends StatefulWidget {
-  final Function onStoreAdded; // Callback function to update the store list
+class AddStoreScreen extends ConsumerStatefulWidget {
+  final String uid;
 
-  AddStoreScreen({required this.onStoreAdded});
+  const AddStoreScreen({required this.uid, Key? key}) : super(key: key);
 
   @override
-  _AddStoreScreenState createState() => _AddStoreScreenState();
+  ConsumerState<AddStoreScreen> createState() => _AddStoreScreenState();
 }
 
-class _AddStoreScreenState extends State<AddStoreScreen> {
+class _AddStoreScreenState extends ConsumerState<AddStoreScreen> {
   final TextEditingController _storeNameController = TextEditingController();
   final TextEditingController _storePhoneController = TextEditingController();
   final TextEditingController _storeAddressController = TextEditingController();
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final DatabaseReference _databaseRef =
-      FirebaseDatabase.instance.ref().child('users');
-
-  void _addStore() async {
-    String storeName = _storeNameController.text;
-    String storePhone = _storePhoneController.text;
-    String storeAddress = _storeAddressController.text;
+  // Sửa lại _addStore để sử dụng ref
+  void _addStore(BuildContext context, WidgetRef ref) async {
+    final storeName = _storeNameController.text.trim();
+    final storePhone = _storePhoneController.text.trim();
+    final storeAddress = _storeAddressController.text.trim();
 
     if (storeName.isEmpty || storePhone.isEmpty || storeAddress.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Vui lòng điền đầy đủ thông tin cửa hàng.')),
+        const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin')),
       );
       return;
     }
 
-    String uid = _auth.currentUser!.uid; // Lấy UID của người dùng hiện tại
-
-    // Thêm cửa hàng vào Firebase
-    DatabaseReference storeRef = _databaseRef.child(uid).child('stores').push();
-    await storeRef.set({
-      'storeName': storeName,
-      'storePhone': storePhone,
-      'storeAddress': storeAddress,
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Cửa hàng đã được thêm thành công!')),
+    final store = Store(
+      storeName: storeName,
+      storePhone: storePhone,
+      storeAddress: storeAddress,
     );
 
-    // Gọi callback để cập nhật danh sách cửa hàng
-    widget.onStoreAdded();
+    // Sử dụng storeProvider với tham số uid
+    await ref
+        .read(storeProvider(widget.uid).notifier)
+        .addStore(widget.uid, store);
 
-    // Quay lại màn hình danh sách cửa hàng sau khi thêm cửa hàng mới
-    Navigator.pop(context);
+    Navigator.pop(context); // Quay lại màn hình trước
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Thêm Cửa Hàng')),
+      appBar: AppBar(title: const Text('Thêm Cửa Hàng')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
               controller: _storeNameController,
-              decoration: InputDecoration(
-                labelText: 'Tên Cửa Hàng',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'Tên Cửa Hàng'),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             TextField(
               controller: _storePhoneController,
-              decoration: InputDecoration(
-                labelText: 'Số Điện Thoại',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'Số Điện Thoại'),
               keyboardType: TextInputType.phone,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             TextField(
               controller: _storeAddressController,
-              decoration: InputDecoration(
-                labelText: 'Địa Chỉ',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'Địa Chỉ'),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _addStore,
-              child: Text('Thêm Cửa Hàng'),
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 50),
-                backgroundColor: Colors.blue,
-              ),
+              onPressed: () =>
+                  _addStore(context, ref), // Đã sửa gọi _addStore(context, ref)
+              child: const Text('Thêm Cửa Hàng'),
             ),
           ],
         ),

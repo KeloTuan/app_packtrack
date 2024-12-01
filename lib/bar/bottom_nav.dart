@@ -1,4 +1,5 @@
 import 'package:app_packtrack/account/account_screen.dart';
+import 'package:app_packtrack/process_screen.dart';
 import 'package:app_packtrack/store/list_store_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -29,6 +30,13 @@ class BottomNav extends StatelessWidget {
         ),
       ],
       onTap: (index) {
+        if (index == 0) {
+          // Khi nhấn vào icon Quy trình
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ProcessScreen()),
+          );
+        }
         if (index == 1) {
           // Khi nhấn vào icon Cửa hàng
           Navigator.push(
@@ -47,7 +55,7 @@ class BottomNav extends StatelessWidget {
       },
       selectedItemColor: Colors.black, // Màu cho mục được chọn
       unselectedItemColor: Colors.black54, // Màu cho mục không được chọn
-      backgroundColor: Colors.white, // Màu nền của BottomNavigationBar
+      backgroundColor: Colors.black54, // Màu nền của BottomNavigationBar
     );
   }
 }

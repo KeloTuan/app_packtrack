@@ -1,33 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ChangePasswordPage extends StatefulWidget {
-  const ChangePasswordPage({super.key});
+final isLoadingProvider = StateProvider<bool>((ref) => false);
 
-  @override
-  _ChangePasswordPageState createState() => _ChangePasswordPageState();
-}
-
-class _ChangePasswordPageState extends State<ChangePasswordPage> {
+class ChangePasswordScreen extends ConsumerWidget {
+  final _formKey = GlobalKey<FormState>();
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
 
-  bool _isLoading = false;
-
-  Future<void> _changePassword() async {
+  Future<void> _changePassword(WidgetRef ref, BuildContext context) async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+      ref.read(isLoadingProvider.notifier).state = true;
 
       try {
         final user = FirebaseAuth.instance.currentUser;
         final currentPassword = _currentPasswordController.text;
         final newPassword = _newPasswordController.text;
 
-        // Reauthenticate user
         final cred = EmailAuthProvider.credential(
           email: user!.email!,
           password: currentPassword,
@@ -40,29 +30,21 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           const SnackBar(content: Text('Đổi mật khẩu thành công!')),
         );
 
-        Navigator.pop(context); // Quay lại trang trước
+        Navigator.pop(context);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Lỗi: $e')),
         );
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        ref.read(isLoadingProvider.notifier).state = false;
       }
     }
   }
 
   @override
-  void dispose() {
-    _currentPasswordController.dispose();
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(isLoadingProvider);
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Đổi mật khẩu'),
@@ -73,62 +55,27 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           key: _formKey,
           child: Column(
             children: [
-              // Mật khẩu hiện tại
               TextFormField(
                 controller: _currentPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Mật khẩu hiện tại',
-                ),
+                decoration:
+                    const InputDecoration(labelText: 'Mật khẩu hiện tại'),
                 obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập mật khẩu hiện tại';
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                    value!.isEmpty ? 'Vui lòng nhập mật khẩu hiện tại' : null,
               ),
-              const SizedBox(height: 16),
-
-              // Mật khẩu mới
               TextFormField(
                 controller: _newPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Mật khẩu mới',
-                ),
+                decoration: const InputDecoration(labelText: 'Mật khẩu mới'),
                 obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập mật khẩu mới';
-                  }
-                  if (value.length < 6) {
-                    return 'Mật khẩu phải có ít nhất 6 ký tự';
-                  }
-                  return null;
-                },
+                validator: (value) => value!.length < 6
+                    ? 'Mật khẩu mới phải ít nhất 6 ký tự'
+                    : null,
               ),
-              const SizedBox(height: 16),
-
-              // Xác nhận mật khẩu
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Xác nhận mật khẩu mới',
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if (value != _newPasswordController.text) {
-                    return 'Mật khẩu không khớp';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 32),
-
-              // Nút lưu
-              _isLoading
+              const SizedBox(height: 20),
+              isLoading
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
-                      onPressed: _changePassword,
+                      onPressed: () => _changePassword(ref, context),
                       child: const Text('Lưu mật khẩu'),
                     ),
             ],

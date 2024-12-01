@@ -1,20 +1,20 @@
+import 'package:app_packtrack/store/firebase_auth_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:app_packtrack/auth/login.dart';
 import 'package:app_packtrack/account/my_account_screen.dart';
 import 'package:app_packtrack/account/change_password.dart';
 import 'package:app_packtrack/bar/bottom_nav.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AccountScreen extends StatelessWidget {
   // Hàm đăng xuất
   Future<void> _signOut(BuildContext context) async {
     try {
-      await FirebaseAuth.instance.signOut(); // Đăng xuất khỏi Firebase
+      await FirebaseAuth.instance.signOut();
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-            builder: (context) =>
-                LoginScreen()), // Chuyển hướng về màn hình đăng nhập
+        MaterialPageRoute(builder: (context) => LoginScreen()),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -47,7 +47,7 @@ class AccountScreen extends StatelessWidget {
               'Đổi mật khẩu',
               () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => ChangePasswordPage()),
+                MaterialPageRoute(builder: (context) => ChangePasswordScreen()),
               ),
             ),
             _buildListItem(
